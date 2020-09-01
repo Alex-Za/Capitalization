@@ -17,6 +17,7 @@ namespace Capitalization
 
         private RelayCommand chooseFile;
         private RelayCommand run;
+        private string consoleText;
         public RelayCommand Run
         {
             get
@@ -43,12 +44,22 @@ namespace Capitalization
                   }));
             }
         }
+        public string ConsoleText
+        {
+            get { return consoleText; }
+            set
+            {
+                consoleText = value;
+                OnPropertyChanged("ConsoleText");
+            }
+        }
 
         public void RunWork()
         {
             FileReader reader = new FileReader(filePath);
             Processing processing = new Processing(reader);
             processing.WriteFile();
+            ConsoleText = "Done!";
         }
 
 

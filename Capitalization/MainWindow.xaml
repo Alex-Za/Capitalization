@@ -10,6 +10,7 @@
         <StackPanel>
             <Button Command="{Binding ChooseFile}" Width="60" Height="25" Content="Select File"/>
             <Button Command="{Binding Run}" Width="60" Height="25" Content="Run"/>
+            <TextBlock Text="{Binding ConsoleText}" Height="100"/>
         </StackPanel>
     </Grid>
 </Window>
