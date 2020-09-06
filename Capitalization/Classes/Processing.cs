@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,61 +17,147 @@ namespace Capitalization.Classes
             this.fileReader = fileReader;
         }
 
-        private DataTable masterFile;
-        public DataTable MasterFile
+        private DataTable masterFileTable;
+        private List<string[]> capitList;
+        public DataTable MasterFileTable
         {
             get
             {
-                if (masterFile == null)
+                if (masterFileTable == null)
                     GenerateMasterFile();
 
-                return masterFile;
+                return masterFileTable;
+            }
+        }
+        public List<string[]> CapitList
+        {
+            get
+            {
+                if (capitList == null)
+                    GenerateMasterFile();
+
+                return capitList;
             }
         }
 
+
         private void GenerateMasterFile()
         {
-            //удалить колонки: первую,
-            string[] columnsToDelete = {"Internal type of work", "D Hours", "M Hours", "In Ratio Hours",
-                "Total time (h)", "D Cost", "M Cost", "In Ratio Cost", "Total cost", "inFileName" }; //так же удалить первую колонку
-            masterFile = new DataTable();
-            masterFile.TableName = "Sheet1";
-            string[] columnNames = fileReader.CapitalizationFile.Columns.Cast<DataColumn>().
-                                   Select(column => column.ColumnName).ToArray();
+            string[] columnsToKeep = { "Module", "Brand/pCat/Department", "Project", "Function", "Person", "Rate aver. ($/h)",
+            "Type of Contractor", "Work index", "Time (h)", "Total Cost", "Add new SKU", "Link to task",
+            "Date of actual work", "Release date" };
 
-            foreach (string column in columnNames)
-                masterFile.Columns.Add(column);
+            masterFileTable = new DataTable();
+            foreach (var column in columnsToKeep)
+                masterFileTable.Columns.Add(column);
 
-            foreach (DataRow row in fileReader.CapitalizationFile.Rows)
+            masterFileTable.TableName = "Sheet1";
+            foreach (DataColumn column in masterFileTable.Columns)
+                column.DataType = typeof(string);
+
+            masterFileTable.Columns[8].DataType = typeof(Double);
+            masterFileTable.Columns[9].DataType = typeof(Double);
+
+            foreach (var row in fileReader.CapitList.Skip(1))
             {
-                masterFile.Rows.Add(row.ItemArray);
+                DataRow masterFileRow = masterFileTable.NewRow();
+                masterFileRow[0] = row[1];
+                masterFileRow[1] = row[2];
+                masterFileRow[2] = row[3];
+                masterFileRow[3] = row[4];
+                masterFileRow[4] = row[6];
+                masterFileRow[5] = row[7];
+                masterFileRow[6] = row[8];
+                masterFileRow[7] = row[9];
+                if (Double.TryParse(row[10], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp))
+                    masterFileRow[8] = Math.Round(temp, 2);
+                else
+                    masterFileRow[8] = DBNull.Value;
+                if (Double.TryParse(row[11], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp2))
+                    masterFileRow[9] = Math.Round(temp2, 2);
+                else
+                    masterFileRow[9] = DBNull.Value;
+                masterFileRow[10] = row[20];
+                masterFileRow[11] = row[21];
+                masterFileRow[12] = row[22];
+                masterFileRow[13] = row[23];
+                masterFileTable.Rows.Add(masterFileRow);
             }
 
-            masterFile.Columns.RemoveAt(0);
-            masterFile.Columns.RemoveAt(masterFile.Columns.Count-1);
-            foreach (var name in columnsToDelete)
-                if (masterFile.Columns.Contains(name))
-                    masterFile.Columns.Remove(name);
 
-            //int lastRow = masterFile.Rows.Count - 1;
-            //int timeHIndex = masterFile.Columns["Time (h)"].Ordinal+1;
-            //double newBrands = (double)masterFile.Rows[lastRow - 2][timeHIndex];
-            //double addtoEx = (double)masterFile.Rows[lastRow - 2].ItemArray[timeHIndex];
-            //double workRel = (double)masterFile.Rows[lastRow-1].ItemArray[timeHIndex];
-            //double workPRel = (double)masterFile.Rows[lastRow].ItemArray[timeHIndex];
-            //double totalPlanfix = workPRel + workRel + addtoEx + newBrands;
 
-            //DataRow newRow = masterFile.Rows.Add();
-            //newRow[timeHIndex] = totalPlanfix;
-            //newRow[1] = "Total Planfix";
-
+            //capitList = fileReader.CapitList;
         }
 
         public void WriteFile()
         {
             using (var workbook = new XLWorkbook())
             {
-                workbook.Worksheets.Add(MasterFile);
+                var worksheet = workbook.Worksheets.Add(MasterFileTable);
+                worksheet.Table(0).Theme = XLTableTheme.None;
+                //worksheet.Cell(1, 1).InsertData(fileReader.CapitList);
+                //int rowsCount = worksheet.Rows().Count();
+                workbook.Worksheet(1).Outline.SummaryVLocation = XLOutlineSummaryVLocation.Top;
+                string projectName = MasterFileTable.Rows[2][2].ToString();
+                int currentPosition = 4;
+                int currentRow = 1;
+                int counter = -3;
+                //foreach (DataRow row in MasterFileTable.Rows)
+                //{
+                //    if (currentRow > MasterFileTable.Rows.Count - 4)
+                //    {
+                //        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
+                //        currentPosition = counter + currentPosition - 1;
+                //        counter = 0;
+                //        break;
+                //    }
+                //    if (row[0].ToString() == "ADD NEW SKU TO EXISTING CATEGORIES")
+                //    {
+                //        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
+                //        currentPosition = counter + currentPosition-1;
+                //        counter = 0;
+                //    }
+                //    if (row[0].ToString() == "WORKS WITHOUT RELATION TO NEW SKU CREATION"
+                //        || row[0].ToString() == "WORKS WITHOUT PROJECT RELATION Project relation (related with Vendors, management of team or mistakes)")
+                //    {
+                //        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter -2).Group(1);
+                //        currentPosition = counter + currentPosition;
+                //        counter = 0;
+                //    }
+                //    counter++;
+                //    currentRow++;
+                //}
+                //currentPosition = 3;
+                //counter = 1;
+                bool check = false;
+                foreach (DataRow row in MasterFileTable.Rows)
+                {
+                    if (row[2].ToString() != "")
+                    {
+                        if (row[2].ToString() != projectName && check)
+                        {
+                            projectName = row[2].ToString();
+                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter).Group(1);
+                            currentPosition = counter + currentPosition + 1;
+                            counter = 0;
+                        }
+                        if (row[2].ToString() != projectName && !check)
+                        {
+                            projectName = row[2].ToString();
+                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter).Group(1);
+                            currentPosition = counter + currentPosition + 2;
+                            counter = 0;
+                            check = true;
+                        }
+                    }
+                    counter++;
+                }
+                //workbook.Worksheet(1).Rows(2, 59).Group();
+                //workbook.Worksheet(1).Rows(4, 17).Group();
+                //workbook.Worksheet(1).Rows(19, 25).Group(1);
+                //workbook.Worksheet(1).Rows(27, 58).Group(1);
+                //workbook.Worksheet(1).CollapseRows();
+
                 //workbook.Worksheet(1).Outline.SummaryVLocation = XLOutlineSummaryVLocation.Top;
                 //workbook.Worksheet(1).Rows(3, 833).Group();
                 //workbook.Worksheet(1).Rows(4, 17).Group();
