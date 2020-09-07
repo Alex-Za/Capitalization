@@ -97,61 +97,88 @@ namespace Capitalization.Classes
                 worksheet.Table(0).Theme = XLTableTheme.None;
                 //worksheet.Cell(1, 1).InsertData(fileReader.CapitList);
                 //int rowsCount = worksheet.Rows().Count();
+                workbook.Worksheet(1).Row(MasterFileTable.Rows.Count - 3).InsertRowsAbove(4);
                 workbook.Worksheet(1).Outline.SummaryVLocation = XLOutlineSummaryVLocation.Top;
                 string projectName = MasterFileTable.Rows[2][2].ToString();
-                int currentPosition = 4;
+                int currentPosition = 3;
                 int currentRow = 1;
-                int counter = -3;
-                //foreach (DataRow row in MasterFileTable.Rows)
-                //{
-                //    if (currentRow > MasterFileTable.Rows.Count - 4)
-                //    {
-                //        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
-                //        currentPosition = counter + currentPosition - 1;
-                //        counter = 0;
-                //        break;
-                //    }
-                //    if (row[0].ToString() == "ADD NEW SKU TO EXISTING CATEGORIES")
-                //    {
-                //        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
-                //        currentPosition = counter + currentPosition-1;
-                //        counter = 0;
-                //    }
-                //    if (row[0].ToString() == "WORKS WITHOUT RELATION TO NEW SKU CREATION"
-                //        || row[0].ToString() == "WORKS WITHOUT PROJECT RELATION Project relation (related with Vendors, management of team or mistakes)")
-                //    {
-                //        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter -2).Group(1);
-                //        currentPosition = counter + currentPosition;
-                //        counter = 0;
-                //    }
-                //    counter++;
-                //    currentRow++;
-                //}
-                //currentPosition = 3;
-                //counter = 1;
-                bool check = false;
+                int counter = 1;
                 foreach (DataRow row in MasterFileTable.Rows)
                 {
+                    if (currentRow > MasterFileTable.Rows.Count - 4)
+                    {
+                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
+                        currentPosition = counter + currentPosition - 1;
+                        counter = 0;
+                        break;
+                    }
+                    if (row[0].ToString() == "ADD NEW SKU TO EXISTING CATEGORIES")
+                    {
+                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
+                        currentPosition = counter + currentPosition - 1;
+                        counter = 0;
+                    }
+                    if (row[0].ToString() == "WORKS WITHOUT RELATION TO NEW SKU CREATION"
+                        || row[0].ToString() == "WORKS WITHOUT PROJECT RELATION Project relation (related with Vendors, management of team or mistakes)")
+                    {
+                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(1);
+                        currentPosition = counter + currentPosition;
+                        counter = 0;
+                    }
+                    counter++;
+                    currentRow++;
+                }
+                currentPosition = 4;
+                counter = -3;
+                currentRow = 1;
+                bool check = false;
+                bool newModuleCheck = false;
+                foreach (DataRow row in MasterFileTable.Rows)
+                {
+                    if (newModuleCheck)
+                    {
+                        projectName = row[2].ToString();
+                        newModuleCheck = false;
+                        currentPosition = counter + currentPosition;
+                        counter--;
+                    }
+
+                    if (currentRow > MasterFileTable.Rows.Count - 5)
+                        break;
+
                     if (row[2].ToString() != "")
                     {
                         if (row[2].ToString() != projectName && check)
                         {
                             projectName = row[2].ToString();
-                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter).Group(1);
-                            currentPosition = counter + currentPosition + 1;
+                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter-2).Group(2);
+                            currentPosition = counter + currentPosition;
                             counter = 0;
                         }
                         if (row[2].ToString() != projectName && !check)
                         {
                             projectName = row[2].ToString();
-                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter).Group(1);
-                            currentPosition = counter + currentPosition + 2;
+                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter).Group(2);
+                            currentPosition = counter + currentPosition +2;
                             counter = 0;
                             check = true;
                         }
+                    } else if (row[2].ToString() == ""&& currentRow > 4)
+                    {
+                        projectName = row[2].ToString();
+                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(2);
+                        currentPosition = counter + currentPosition;
+                        counter = 0;
+                        newModuleCheck = true;
                     }
                     counter++;
+                    currentRow++;
                 }
+                workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(2);
+                int lastRowIndex = MasterFileTable.Rows.Count - 1;
+                workbook.Worksheet(1).Row(lastRowIndex).Cell(9).SetValue("SUMM");
+                
+
                 //workbook.Worksheet(1).Rows(2, 59).Group();
                 //workbook.Worksheet(1).Rows(4, 17).Group();
                 //workbook.Worksheet(1).Rows(19, 25).Group(1);
