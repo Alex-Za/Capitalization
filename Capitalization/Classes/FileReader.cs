@@ -19,27 +19,16 @@ namespace Capitalization.Classes
         {
             this.filePath = filePath;
         }
-        private DataTable capitalizationFile;
-        private string[,] capFile;
+        private DataTable capitFileSecondSheet;
         private List<string[]> capitList;
-        public DataTable CapitalizationFile
+        public DataTable CapitFileSecondSheet
         {
             get
             {
-                if (capitalizationFile == null)
-                    ReadExcelFile(filePath);
+                if (capitFileSecondSheet == null)
+                    ReadExcelFileWithDataReader(filePath);
 
-                return capitalizationFile;
-            }
-        }
-        public string[,] CapFile
-        {
-            get
-            {
-                if (capFile == null)
-                    ReadExcelFile(filePath);
-
-                return capFile;
+                return capitFileSecondSheet;
             }
         }
         public List<string[]> CapitList
@@ -120,45 +109,21 @@ namespace Capitalization.Classes
             }
             return index;
         }
-
-        private void ReadExcelFileWithClosedXml(string filePath)
-        {
-            using (var excelWorkbook = new XLWorkbook(filePath))
-            {
-                var dataRows = excelWorkbook.Worksheet(1).Rows();
-                int rowsCount = dataRows.Count();
-                int columnCounts = dataRows.First().CellsUsed().Count();
-                capFile = new string[rowsCount+2, columnCounts+2];
-                int rowIndex = 0;
-                int columnIndex = 0;
-                
-                foreach (var dataRow in dataRows)
-                {
-                    
-                    foreach (var cell in dataRow.Cells())
-                    {
-                        capFile[rowIndex, columnIndex] = cell.GetValue<string>();
-                        columnIndex++;
-                    }
-                    columnIndex = 0;
-                    rowIndex++;
-                }
-            }
-        }
         private void ReadExcelFileWithDataReader(string filePath)
         {
             using (FileStream stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
             {
                 using (IExcelDataReader reader = ExcelReaderFactory.CreateOpenXmlReader(stream))
                 {
-                    DataSet dataSet = reader.AsDataSet(new ExcelDataSetConfiguration()
+                    DataTable dataTable = reader.AsDataSet(new ExcelDataSetConfiguration()
                     {
                         ConfigureDataTable = (c) => new ExcelDataTableConfiguration()
                         {
                             UseHeaderRow = true
                         }
-                    });
-                    capitalizationFile = dataSet.Tables[0];
+                    }).Tables[1];
+
+                    capitFileSecondSheet = dataTable;
                 }
             }
         }

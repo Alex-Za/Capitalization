@@ -56,9 +56,13 @@ namespace Capitalization
 
         public void RunWork()
         {
+            ConsoleText = "In Progress...";
             FileReader reader = new FileReader(filePath);
             Processing processing = new Processing(reader);
-            processing.WriteFile();
+            FileWriter writer = new FileWriter(processing);
+            //writer.WriteMasterFile();
+            //writer.WriteReportFIle();
+            writer.WriteCostFile();
             ConsoleText = "Done!";
         }
 

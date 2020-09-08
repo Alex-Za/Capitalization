@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media.TextFormatting;
 
 namespace Capitalization.Classes
 {
@@ -18,7 +19,10 @@ namespace Capitalization.Classes
         }
 
         private DataTable masterFileTable;
-        private List<string[]> capitList;
+        private DataTable masterFileSecondSheet;
+        private DataTable reportFile;
+        private DataTable costFile;
+
         public DataTable MasterFileTable
         {
             get
@@ -29,18 +33,138 @@ namespace Capitalization.Classes
                 return masterFileTable;
             }
         }
-        public List<string[]> CapitList
+        public DataTable MasterFileSecondSheet
         {
             get
             {
-                if (capitList == null)
-                    GenerateMasterFile();
+                if (masterFileSecondSheet == null)
+                    GenerateMasterFileSecondSheet();
 
-                return capitList;
+                return masterFileSecondSheet;
+            }
+        }
+        public DataTable ReportFile
+        {
+            get
+            {
+                if (reportFile == null)
+                    GenerateReportFile();
+
+                return reportFile;
+            }
+        }
+        public DataTable CostFile
+        {
+            get
+            {
+                if (costFile == null)
+                    GenerateCostFile();
+
+                return costFile;
             }
         }
 
+        private void GenerateCostFile()
+        {
+            string[] allColumns = { "Project", "Capex (D-cost) ($)", "Opex (M-cost) ($)", "(In_Ratio-cost) ($)", "Total cost ($)", "Brand/pCat/Department" };
+            costFile = new DataTable();
+            foreach (var column in allColumns)
+                costFile.Columns.Add(column);
 
+            costFile.TableName = "Cost by Project Planfix (work)";
+            costFile.Columns[0].DataType = typeof(string);
+            costFile.Columns[5].DataType = typeof(string);
+            for (int i = 1; i < 5; i++)
+                costFile.Columns[i].DataType = typeof(double);
+
+            string projectName = "$P$";
+            int counter = 1;
+            foreach (var row in fileReader.CapitList.Skip(1))
+            {
+                if (row[3] !=  null && row[3] != "" && row[3].ToString()!= projectName)
+                {
+                    projectName = row[3].ToString();
+                    DataRow costFileRow = costFile.NewRow();
+                    costFileRow[0] = row[3].ToString();
+
+                    if (double.TryParse(row[16], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp))
+                        costFileRow[1] = Math.Round(temp, 2);
+                    else
+                        costFileRow[1] = DBNull.Value;
+                    if (double.TryParse(row[17], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp1))
+                        costFileRow[2] = Math.Round(temp1, 2);
+                    else
+                        costFileRow[2] = DBNull.Value;
+                    if (double.TryParse(row[18], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp2))
+                        costFileRow[3] = Math.Round(temp2, 2);
+                    else
+                        costFileRow[3] = DBNull.Value;
+                    if (double.TryParse(row[19], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp3))
+                        costFileRow[4] = Math.Round(temp3, 2);
+                    else
+                        costFileRow[4] = DBNull.Value;
+                    costFileRow[5] = fileReader.CapitList[counter + 1][2].ToString();
+                    costFile.Rows.Add(costFileRow);
+                }
+                counter++;
+            }
+
+
+        }
+
+        private void GenerateReportFile()
+        {
+            string[] columnsToKeep = { "Module", "Brand/pCat/Department", "Project", "D Hours", "M Hours", "In Ratio Hours", "Total time (h)" };
+
+            reportFile = new DataTable();
+            foreach (var column in columnsToKeep)
+                reportFile.Columns.Add(column);
+
+            string currentDate = DateTime.Now.ToString("MMMM yyyy", new CultureInfo("en-US"));
+            reportFile.TableName = currentDate;
+
+            for (int i = 0; i < 3; i++)
+                reportFile.Columns[i].DataType = typeof(string);
+
+            for (int i = 3; i < 7; i++)
+                reportFile.Columns[i].DataType = typeof(double);
+
+            foreach (var row in fileReader.CapitList.Skip(1))
+            {
+                DataRow reportFileRow = reportFile.NewRow();
+                reportFileRow[0] = row[1];
+                reportFileRow[1] = row[2];
+                reportFileRow[2] = row[3];
+
+                if (double.TryParse(row[12], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp))
+                    reportFileRow[3] = Math.Round(temp, 2);
+                else
+                    reportFileRow[3] = DBNull.Value;
+
+                if (double.TryParse(row[13], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp1))
+                    reportFileRow[4] = Math.Round(temp1, 2);
+                else
+                    reportFileRow[4] = DBNull.Value;
+
+                if (double.TryParse(row[14], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp2))
+                    reportFileRow[5] = Math.Round(temp2, 2);
+                else
+                    reportFileRow[5] = DBNull.Value;
+
+                if (double.TryParse(row[15], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp3))
+                    reportFileRow[6] = Math.Round(temp3, 2);
+                else
+                    reportFileRow[6] = DBNull.Value;
+
+                reportFile.Rows.Add(reportFileRow);
+            }
+
+        }
+        private void GenerateMasterFileSecondSheet()
+        {
+            masterFileSecondSheet = fileReader.CapitFileSecondSheet;
+            masterFileSecondSheet.TableName = "Rate_Planfix";
+        }
         private void GenerateMasterFile()
         {
             string[] columnsToKeep = { "Module", "Brand/pCat/Department", "Project", "Function", "Person", "Rate aver. ($/h)",
@@ -51,7 +175,9 @@ namespace Capitalization.Classes
             foreach (var column in columnsToKeep)
                 masterFileTable.Columns.Add(column);
 
-            masterFileTable.TableName = "Sheet1";
+            string currentMonth = DateTime.Now.ToString("MMMM", new CultureInfo("en-US"));
+
+            masterFileTable.TableName = "Planfix_" + currentMonth;
             foreach (DataColumn column in masterFileTable.Columns)
                 column.DataType = typeof(string);
 
@@ -89,109 +215,5 @@ namespace Capitalization.Classes
             //capitList = fileReader.CapitList;
         }
 
-        public void WriteFile()
-        {
-            using (var workbook = new XLWorkbook())
-            {
-                var worksheet = workbook.Worksheets.Add(MasterFileTable);
-                worksheet.Table(0).Theme = XLTableTheme.None;
-                //worksheet.Cell(1, 1).InsertData(fileReader.CapitList);
-                //int rowsCount = worksheet.Rows().Count();
-                workbook.Worksheet(1).Row(MasterFileTable.Rows.Count - 3).InsertRowsAbove(4);
-                workbook.Worksheet(1).Outline.SummaryVLocation = XLOutlineSummaryVLocation.Top;
-                string projectName = MasterFileTable.Rows[2][2].ToString();
-                int currentPosition = 3;
-                int currentRow = 1;
-                int counter = 1;
-                foreach (DataRow row in MasterFileTable.Rows)
-                {
-                    if (currentRow > MasterFileTable.Rows.Count - 4)
-                    {
-                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
-                        currentPosition = counter + currentPosition - 1;
-                        counter = 0;
-                        break;
-                    }
-                    if (row[0].ToString() == "ADD NEW SKU TO EXISTING CATEGORIES")
-                    {
-                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 3).Group(1);
-                        currentPosition = counter + currentPosition - 1;
-                        counter = 0;
-                    }
-                    if (row[0].ToString() == "WORKS WITHOUT RELATION TO NEW SKU CREATION"
-                        || row[0].ToString() == "WORKS WITHOUT PROJECT RELATION Project relation (related with Vendors, management of team or mistakes)")
-                    {
-                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(1);
-                        currentPosition = counter + currentPosition;
-                        counter = 0;
-                    }
-                    counter++;
-                    currentRow++;
-                }
-                currentPosition = 4;
-                counter = -3;
-                currentRow = 1;
-                bool check = false;
-                bool newModuleCheck = false;
-                foreach (DataRow row in MasterFileTable.Rows)
-                {
-                    if (newModuleCheck)
-                    {
-                        projectName = row[2].ToString();
-                        newModuleCheck = false;
-                        currentPosition = counter + currentPosition;
-                        counter--;
-                    }
-
-                    if (currentRow > MasterFileTable.Rows.Count - 5)
-                        break;
-
-                    if (row[2].ToString() != "")
-                    {
-                        if (row[2].ToString() != projectName && check)
-                        {
-                            projectName = row[2].ToString();
-                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter-2).Group(2);
-                            currentPosition = counter + currentPosition;
-                            counter = 0;
-                        }
-                        if (row[2].ToString() != projectName && !check)
-                        {
-                            projectName = row[2].ToString();
-                            workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter).Group(2);
-                            currentPosition = counter + currentPosition +2;
-                            counter = 0;
-                            check = true;
-                        }
-                    } else if (row[2].ToString() == ""&& currentRow > 4)
-                    {
-                        projectName = row[2].ToString();
-                        workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(2);
-                        currentPosition = counter + currentPosition;
-                        counter = 0;
-                        newModuleCheck = true;
-                    }
-                    counter++;
-                    currentRow++;
-                }
-                workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(2);
-                int lastRowIndex = MasterFileTable.Rows.Count - 1;
-                workbook.Worksheet(1).Row(lastRowIndex).Cell(9).SetValue("SUMM");
-                
-
-                //workbook.Worksheet(1).Rows(2, 59).Group();
-                //workbook.Worksheet(1).Rows(4, 17).Group();
-                //workbook.Worksheet(1).Rows(19, 25).Group(1);
-                //workbook.Worksheet(1).Rows(27, 58).Group(1);
-                //workbook.Worksheet(1).CollapseRows();
-
-                //workbook.Worksheet(1).Outline.SummaryVLocation = XLOutlineSummaryVLocation.Top;
-                //workbook.Worksheet(1).Rows(3, 833).Group();
-                //workbook.Worksheet(1).Rows(4, 17).Group();
-                //workbook.Worksheet(1).CollapseRows();
-
-                workbook.SaveAs("New.xlsx");
-            }
-        }
     }
 }
