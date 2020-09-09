@@ -5,6 +5,7 @@ using ExcelDataReader;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -36,12 +37,81 @@ namespace Capitalization.Classes
             get
             {
                 if (capitList == null)
+                {
                     ReadExcelFile(filePath);
+                    AddedSummData();
+                }
 
                 return capitList;
             }
         }
 
+        private void AddedSummData()
+        {
+            double[] newBrandSummArr = new double[10];
+            double[] addNewSKUSummArr = new double[10];
+            double[] workRelationSummArr = new double[10];
+            double[] workProjectSummArr = new double[10];
+
+            foreach (var row in capitList)
+            {
+                if (row[0] == "NEW BRANDS")
+                {
+                    if (row[6] == "" && row[3] != "")
+                    {
+                        AddSumm(newBrandSummArr, row);
+                    }
+                } else if (row[0] == "ADD NEW SKU TO EXISTING CATEGORIES")
+                {
+                    if (row[6] == "" && row[3] != "")
+                    {
+                        AddSumm(addNewSKUSummArr, row);
+                    }
+                } else if (row[0] == "WORKS WITHOUT RELATION TO NEW SKU CREATION")
+                {
+                    if (row[6] == "" && row[3] != "")
+                    {
+                        AddSumm(workRelationSummArr, row);
+                    }
+                } else if (row[0] == "WORKS WITHOUT PROJECT RELATION Project relation (related with Vendors, management of team or mistakes)")
+                {
+                    if (row[6] != "")
+                    {
+                        AddSumm(workProjectSummArr, row);
+                    }
+                }
+            }
+
+            for (int i = 0; i < 6; i++)
+                capitList.Add(new string[25]);
+
+            string[] newBrandSummRow = FillSummData(newBrandSummArr, "NEW BRAND");
+            capitList.Add(newBrandSummRow);
+            string[] addNewSkuSummRow = FillSummData(addNewSKUSummArr, "ADD NEW SKU TO EXISTING CATEGORIES");
+            capitList.Add(addNewSkuSummRow);
+            string[] workRelationSummRow = FillSummData(workRelationSummArr, "WORKS WITHOUT RELATION TO NEW SKU CREATION");
+            capitList.Add(workRelationSummRow);
+            string[] workProjectSummRow = FillSummData(workProjectSummArr, "WORKS WITHOUT PROJECT RELATION Project relation (related with Vendors, management of team or mistakes)");
+            capitList.Add(workProjectSummRow);
+            capitList.Add(new string[25]);
+
+        }
+        private string[] FillSummData(double[] summArr, string type)
+        {
+            string[] summRow = new string[25];
+            summRow[1] = type;
+            for (int i = 0; i < summArr.Length; i++)
+                summRow[i + 10] = summArr[i].ToString("0.00").Replace(",",".");
+            return summRow;
+        }
+        private void AddSumm(double[] arrForSumm, string[] row)
+        {
+            for (int i = 10; i < 20; i++)
+            {
+                if (double.TryParse(row[i], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp))
+                    arrForSumm[i-10] += Math.Round(temp, 2);
+            }
+        }
         private void ReadExcelFile(string filePath)
         {
             using (SpreadsheetDocument spreadSheetDocument = SpreadsheetDocument.Open(filePath, false))
@@ -72,7 +142,6 @@ namespace Capitalization.Classes
                 }
             }
         }
-
         private string GetCellValue(SpreadsheetDocument document, Cell cell)
         {
             SharedStringTablePart stringTablePart = document.WorkbookPart.SharedStringTablePart;

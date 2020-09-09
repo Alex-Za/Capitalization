@@ -14,10 +14,19 @@ namespace Capitalization
     class CapitalizationViewModel : INotifyPropertyChanged
     {
         private string filePath;
+        public CapitalizationViewModel()
+        {
+            worker = new BackgroundWorker();
+            worker.WorkerReportsProgress = true;
+            worker.DoWork += RunWork;
+            worker.ProgressChanged += worker_ProgressChanged;
+        }
 
         private RelayCommand chooseFile;
         private RelayCommand run;
         private string consoleText;
+        private int progress;
+        bool selectFile;
         public RelayCommand Run
         {
             get
@@ -25,7 +34,7 @@ namespace Capitalization
                 return run ??
                   (run = new RelayCommand(obj =>
                   {
-                      RunWork();
+                      worker.RunWorkerAsync();
                   }));
             }
         }
@@ -40,6 +49,7 @@ namespace Capitalization
                       if (openFileDialog.ShowDialog() == true)
                       {
                           filePath = openFileDialog.FileName;
+                          SelectFile = true;
                       }
                   }));
             }
@@ -53,19 +63,62 @@ namespace Capitalization
                 OnPropertyChanged("ConsoleText");
             }
         }
-
-        public void RunWork()
+        public int Progress
         {
-            ConsoleText = "In Progress...";
-            FileReader reader = new FileReader(filePath);
-            Processing processing = new Processing(reader);
-            FileWriter writer = new FileWriter(processing);
-            //writer.WriteMasterFile();
-            //writer.WriteReportFIle();
-            writer.WriteCostFile();
-            ConsoleText = "Done!";
+            get
+            {
+                return progress;
+            }
+            set
+            {
+                progress = value;
+                OnPropertyChanged("Progress");
+            }
+        }
+        public bool SelectFile
+        {
+            get
+            {
+                return selectFile;
+            }
+            set
+            {
+                selectFile = value;
+                OnPropertyChanged("SelectFile");
+            }
         }
 
+        public void RunWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                ConsoleText = "In Progress...";
+                FileReader reader = new FileReader(filePath);
+                Processing processing = new Processing(reader);
+                FileWriter writer = new FileWriter(processing, changeProgress);
+                writer.WriteMasterFile();
+                writer.WriteReportFIle();
+                writer.WriteCostFile();
+                writer.AddedSummDataInOriginalFile(filePath);
+
+                ConsoleText = "Done!";
+                changeProgress(100);
+            } catch (Exception ex)
+            {
+                ConsoleText = ex.ToString();
+            }
+            
+        }
+
+        private BackgroundWorker worker;
+        void worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            Progress = e.ProgressPercentage;
+        }
+        private void changeProgress(int count)
+        {
+            this.worker.ReportProgress(count);
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged([CallerMemberName]string prop = "")

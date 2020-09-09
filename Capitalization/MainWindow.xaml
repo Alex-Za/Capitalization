@@ -5,12 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Capitalization"
         mc:Ignorable="d"
-        Title="MainWindow" Height="348.561" Width="603.597">
+        Title="MainWindow" Height="234.343" Width="424.393">
     <Grid>
-        <StackPanel>
-            <Button Command="{Binding ChooseFile}" Width="60" Height="25" Content="Select File"/>
-            <Button Command="{Binding Run}" Width="60" Height="25" Content="Run"/>
-            <TextBlock Text="{Binding ConsoleText}" Height="100"/>
+        <StackPanel Margin="10">
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ChooseFile}" HorizontalAlignment="Left" Width="60" Height="25" Content="Select File" Margin="5"/>
+                <CheckBox IsChecked="{Binding SelectFile}" VerticalAlignment="Center"/>
+                <Button Command="{Binding Run}" HorizontalAlignment="Right" Width="60" Height="25" Content="Run" Margin="240 0 0 0"/>
+            </StackPanel>
+            <ProgressBar Value="{Binding Progress}" Height="25" Margin="0 40 0 10" Minimum="0" Maximum="100"/>
+            <TextBlock Text="{Binding ConsoleText}" Height="60"/>
         </StackPanel>
     </Grid>
 </Window>

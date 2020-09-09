@@ -63,6 +63,7 @@ namespace Capitalization.Classes
                 return costFile;
             }
         }
+        public List<string[]> CapitList { get { return fileReader.CapitList; } }
 
         private void GenerateCostFile()
         {
@@ -87,19 +88,19 @@ namespace Capitalization.Classes
                     DataRow costFileRow = costFile.NewRow();
                     costFileRow[0] = row[3].ToString();
 
-                    if (double.TryParse(row[16], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp))
+                    if (double.TryParse(row[16], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp))
                         costFileRow[1] = Math.Round(temp, 2);
                     else
                         costFileRow[1] = DBNull.Value;
-                    if (double.TryParse(row[17], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp1))
+                    if (double.TryParse(row[17], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp1))
                         costFileRow[2] = Math.Round(temp1, 2);
                     else
                         costFileRow[2] = DBNull.Value;
-                    if (double.TryParse(row[18], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp2))
+                    if (double.TryParse(row[18], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp2))
                         costFileRow[3] = Math.Round(temp2, 2);
                     else
                         costFileRow[3] = DBNull.Value;
-                    if (double.TryParse(row[19], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp3))
+                    if (double.TryParse(row[19], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp3))
                         costFileRow[4] = Math.Round(temp3, 2);
                     else
                         costFileRow[4] = DBNull.Value;
@@ -111,7 +112,6 @@ namespace Capitalization.Classes
 
 
         }
-
         private void GenerateReportFile()
         {
             string[] columnsToKeep = { "Module", "Brand/pCat/Department", "Project", "D Hours", "M Hours", "In Ratio Hours", "Total time (h)" };
@@ -136,22 +136,22 @@ namespace Capitalization.Classes
                 reportFileRow[1] = row[2];
                 reportFileRow[2] = row[3];
 
-                if (double.TryParse(row[12], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp))
+                if (double.TryParse(row[12], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp))
                     reportFileRow[3] = Math.Round(temp, 2);
                 else
                     reportFileRow[3] = DBNull.Value;
 
-                if (double.TryParse(row[13], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp1))
+                if (double.TryParse(row[13], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp1))
                     reportFileRow[4] = Math.Round(temp1, 2);
                 else
                     reportFileRow[4] = DBNull.Value;
 
-                if (double.TryParse(row[14], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp2))
+                if (double.TryParse(row[14], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp2))
                     reportFileRow[5] = Math.Round(temp2, 2);
                 else
                     reportFileRow[5] = DBNull.Value;
 
-                if (double.TryParse(row[15], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp3))
+                if (double.TryParse(row[15], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp3))
                     reportFileRow[6] = Math.Round(temp3, 2);
                 else
                     reportFileRow[6] = DBNull.Value;
@@ -181,8 +181,8 @@ namespace Capitalization.Classes
             foreach (DataColumn column in masterFileTable.Columns)
                 column.DataType = typeof(string);
 
-            masterFileTable.Columns[8].DataType = typeof(Double);
-            masterFileTable.Columns[9].DataType = typeof(Double);
+            masterFileTable.Columns[8].DataType = typeof(double);
+            masterFileTable.Columns[9].DataType = typeof(double);
 
             foreach (var row in fileReader.CapitList.Skip(1))
             {
@@ -195,11 +195,11 @@ namespace Capitalization.Classes
                 masterFileRow[5] = row[7];
                 masterFileRow[6] = row[8];
                 masterFileRow[7] = row[9];
-                if (Double.TryParse(row[10], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp))
+                if (double.TryParse(row[10], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp))
                     masterFileRow[8] = Math.Round(temp, 2);
                 else
                     masterFileRow[8] = DBNull.Value;
-                if (Double.TryParse(row[11], NumberStyles.Any, CultureInfo.GetCultureInfo("en-US"), out double temp2))
+                if (double.TryParse(row[11], NumberStyles.Any, CultureInfo.InvariantCulture, out double temp2))
                     masterFileRow[9] = Math.Round(temp2, 2);
                 else
                     masterFileRow[9] = DBNull.Value;

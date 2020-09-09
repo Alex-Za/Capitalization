@@ -1,8 +1,10 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,31 +14,39 @@ namespace Capitalization.Classes
     class FileWriter
     {
         Processing processing;
-        public FileWriter(Processing processing)
+        Action<int> changeProgress;
+        string currentDirectory;
+        
+        public FileWriter(Processing processing, Action<int> changeProgress)
         {
             this.processing = processing;
+            this.changeProgress = changeProgress;
+            currentDirectory = Directory.GetCurrentDirectory();
         }
 
         public void WriteCostFile()
         {
+            changeProgress(60);
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add(processing.CostFile);
                 worksheet.Table(0).Theme = XLTableTheme.None;
                 workbook.Worksheet(1).Row(1).Cells(1, 6).Style.Fill.BackgroundColor = XLColor.Gray;
                 workbook.Worksheet(1).Row(1).Cells(1, 6).Style.Font.Bold = true;
-                workbook.SaveAs("Cost by Project Planfix (work).xlsx");
+                workbook.SaveAs(currentDirectory +"\\Cost by Project Planfix (work).xlsx");
             }
+            changeProgress(70);
         }
         public void WriteReportFIle()
         {
+            changeProgress(40);
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add(processing.ReportFile);
                 worksheet.Table(0).Theme = XLTableTheme.None;
                 workbook.Worksheet(1).Row(processing.ReportFile.Rows.Count - 3).InsertRowsAbove(4);
-                workbook.Worksheet(1).Row(1).Cells(1, 14).Style.Fill.BackgroundColor = XLColor.Gray;
-                workbook.Worksheet(1).Row(2).Cells(1, 14).Style.Fill.BackgroundColor = XLColor.Orange;
+                workbook.Worksheet(1).Row(1).Cells(1, 7).Style.Fill.BackgroundColor = XLColor.Gray;
+                workbook.Worksheet(1).Row(2).Cells(1, 7).Style.Fill.BackgroundColor = XLColor.Orange;
                 workbook.Worksheet(1).Outline.SummaryVLocation = XLOutlineSummaryVLocation.Top;
                 string projectName = processing.ReportFile.Rows[2][2].ToString();
                 int currentPosition = 3;
@@ -157,14 +167,17 @@ namespace Capitalization.Classes
                 workbook.Worksheet(1).CollapseRows();
 
                 string currentDate = DateTime.Now.ToString("MMMM yyyy", new CultureInfo("en-US"));
-                workbook.SaveAs("Short wo_Capitalization report for " + currentDate + ".xlsx");
+                workbook.SaveAs(currentDirectory + "\\Short wo_Capitalization report for " + currentDate + ".xlsx");
+                changeProgress(50);
             }
         }
         public void WriteMasterFile()
         {
+            changeProgress(10);
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add(processing.MasterFileTable);
+                changeProgress(20);
                 worksheet.Table(0).Theme = XLTableTheme.None;
                 workbook.Worksheet(1).Row(processing.MasterFileTable.Rows.Count - 3).InsertRowsAbove(4);
                 workbook.Worksheet(1).Row(1).Cells(1, 14).Style.Fill.BackgroundColor = XLColor.Gray;
@@ -285,8 +298,41 @@ namespace Capitalization.Classes
                 workbook.Worksheet(2).Row(1).Cells(1, 2).Style.Font.Bold = true;
 
                 string currentDate = DateTime.Now.ToString("MMMM yyyy", new CultureInfo("en-US"));
-                workbook.SaveAs("Master file _ Capitalization report for " + currentDate + ".xlsx");
+                workbook.SaveAs(currentDirectory + "\\Master file _ Capitalization report for " + currentDate + ".xlsx");
+                changeProgress(30);
             }
         }
+        public void AddedSummDataInOriginalFile(string filePath)
+        {
+            changeProgress(80);
+            using (var workbook = new XLWorkbook(filePath))
+            {
+                var worksheet = workbook.Worksheet(1);
+                int lastRow = worksheet.RowsUsed().Count();
+                worksheet.Row(lastRow+1).InsertRowsBelow(10);
+
+                worksheet.Row(lastRow + 6).Cell(2).SetValue("NEW BRANDS");
+                worksheet.Row(lastRow + 7).Cell(2).SetValue("ADD NEW SKU TO EXISTING CATEGORIES");
+                worksheet.Row(lastRow + 8).Cell(2).SetValue("WORKS WITHOUT RELATION TO NEW SKU CREATION");
+                worksheet.Row(lastRow + 9).Cell(2).SetValue("WORKS WITHOUT PROJECT RELATION Project relation (related with Vendors, management of team or mistakes)");
+                int lastRowInCapitList = processing.CapitList.Count;
+                for (int i = 0; i < 4; i++)
+                    for (int x = 11; x < 21; x++)
+                        worksheet.Row(lastRow + 6 + i).Cell(x).SetValue(processing.CapitList[lastRowInCapitList - 5+i][x-1]);
+
+                workbook.Save();
+                changeProgress(90);
+            }
+        }
+        public void Write()
+        {
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Sheet1");
+                worksheet.Cell(1, 1).InsertData(processing.CapitList);
+                workbook.SaveAs("InsertingData.xlsx");
+            }
+        }
+
     }
 }
