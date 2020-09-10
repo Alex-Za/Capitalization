@@ -1,4 +1,5 @@
-﻿using ClosedXML.Excel;
+﻿using Capitalization.Adittional_Classes;
+using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using ExcelDataReader;
@@ -16,9 +17,11 @@ namespace Capitalization.Classes
     class FileReader
     {
         private string filePath;
-        public FileReader(string filePath)
+        private ConsoleMessage message;
+        public FileReader(string filePath, ConsoleMessage message)
         {
             this.filePath = filePath;
+            this.message = message;
         }
         private DataTable capitFileSecondSheet;
         private List<string[]> capitList;
@@ -48,6 +51,7 @@ namespace Capitalization.Classes
 
         private void AddedSummData()
         {
+            message.MessageTriger("Добавление суммирующих значений файла Report...");
             double[] newBrandSummArr = new double[10];
             double[] addNewSKUSummArr = new double[10];
             double[] workRelationSummArr = new double[10];
@@ -114,6 +118,7 @@ namespace Capitalization.Classes
         }
         private void ReadExcelFile(string filePath)
         {
+            message.MessageTriger("Чтение исходного файла Report...");
             using (SpreadsheetDocument spreadSheetDocument = SpreadsheetDocument.Open(filePath, false))
             {
                 WorkbookPart workbookPart = spreadSheetDocument.WorkbookPart;

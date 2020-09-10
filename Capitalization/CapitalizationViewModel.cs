@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -90,24 +91,43 @@ namespace Capitalization
 
         public void RunWork(object sender, DoWorkEventArgs e)
         {
-            try
-            {
-                ConsoleText = "In Progress...";
-                FileReader reader = new FileReader(filePath);
-                Processing processing = new Processing(reader);
-                FileWriter writer = new FileWriter(processing, changeProgress);
-                writer.WriteMasterFile();
-                writer.WriteReportFIle();
-                writer.WriteCostFile();
-                writer.AddedSummDataInOriginalFile(filePath);
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            SetFileDialogSettings(fileDialog);
 
-                ConsoleText = "Done!";
-                changeProgress(100);
-            } catch (Exception ex)
+            if (fileDialog.ShowDialog() == true)
             {
-                ConsoleText = ex.ToString();
+                try
+                {
+                    string saveFilePath = Path.GetDirectoryName(fileDialog.FileName);
+
+                    ConsoleMessage message = new ConsoleMessage();
+                    message.MessageNotification += MessageTriger;
+                    message.ErrorNotification += MessageTriger;
+                    FileReader reader = new FileReader(filePath, message);
+                    Processing processing = new Processing(reader, message);
+                    FileWriter writer = new FileWriter(processing, changeProgress, message, saveFilePath);
+                    writer.WriteMasterFile();
+                    writer.WriteReportFIle();
+                    writer.WriteCostFile();
+                    writer.AddedSummDataInOriginalFile(filePath);
+
+                    ConsoleText = "Done!";
+                    changeProgress(100);
+                }
+                catch (Exception ex)
+                {
+                    ConsoleText += Environment.NewLine + ex.ToString();
+                }
             }
             
+        }
+
+        private void SetFileDialogSettings(OpenFileDialog fileDialog)
+        {
+            fileDialog.ValidateNames = false;
+            fileDialog.CheckFileExists = false;
+            fileDialog.CheckPathExists = true;
+            fileDialog.FileName = "Folder Selection.";
         }
 
         private BackgroundWorker worker;
@@ -118,6 +138,10 @@ namespace Capitalization
         private void changeProgress(int count)
         {
             this.worker.ReportProgress(count);
+        }
+        private void MessageTriger(string message)
+        {
+            ConsoleText = message;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

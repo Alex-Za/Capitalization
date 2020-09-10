@@ -14,7 +14,7 @@
                 <Button Command="{Binding Run}" HorizontalAlignment="Right" Width="60" Height="25" Content="Run" Margin="240 0 0 0"/>
             </StackPanel>
             <ProgressBar Value="{Binding Progress}" Height="25" Margin="0 40 0 10" Minimum="0" Maximum="100"/>
-            <TextBlock Text="{Binding ConsoleText}" Height="60"/>
+            <TextBox Text="{Binding ConsoleText}" MinHeight="60" TextWrapping="Wrap" IsReadOnly="True"/>
         </StackPanel>
     </Grid>
 </Window>

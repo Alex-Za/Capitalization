@@ -1,4 +1,5 @@
-﻿using ClosedXML.Excel;
+﻿using Capitalization.Adittional_Classes;
+using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Drawing;
 using System;
 using System.Collections.Generic;
@@ -16,11 +17,14 @@ namespace Capitalization.Classes
         Processing processing;
         Action<int> changeProgress;
         string currentDirectory;
-        
-        public FileWriter(Processing processing, Action<int> changeProgress)
+        string saveFilePath;
+        ConsoleMessage message;
+        public FileWriter(Processing processing, Action<int> changeProgress, ConsoleMessage message, string saveFilePath)
         {
             this.processing = processing;
             this.changeProgress = changeProgress;
+            this.message = message;
+            this.saveFilePath = saveFilePath;
             currentDirectory = Directory.GetCurrentDirectory();
         }
 
@@ -30,10 +34,11 @@ namespace Capitalization.Classes
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add(processing.CostFile);
+                message.MessageTriger("Запись файла Cost by Project Planfix (work)...");
                 worksheet.Table(0).Theme = XLTableTheme.None;
                 workbook.Worksheet(1).Row(1).Cells(1, 6).Style.Fill.BackgroundColor = XLColor.Gray;
                 workbook.Worksheet(1).Row(1).Cells(1, 6).Style.Font.Bold = true;
-                workbook.SaveAs(currentDirectory +"\\Cost by Project Planfix (work).xlsx");
+                workbook.SaveAs(saveFilePath + "\\Cost by Project Planfix (work).xlsx");
             }
             changeProgress(70);
         }
@@ -43,6 +48,7 @@ namespace Capitalization.Classes
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add(processing.ReportFile);
+                message.MessageTriger("Запись файла Short wo_Capitalization report...");
                 worksheet.Table(0).Theme = XLTableTheme.None;
                 workbook.Worksheet(1).Row(processing.ReportFile.Rows.Count - 3).InsertRowsAbove(4);
                 workbook.Worksheet(1).Row(1).Cells(1, 7).Style.Fill.BackgroundColor = XLColor.Gray;
@@ -132,44 +138,33 @@ namespace Capitalization.Classes
                 workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(2);
                 int lastRowIndex = processing.ReportFile.Rows.Count - 2;
 
-                double total1 = double.Parse(processing.ReportFile.Rows[lastRowIndex][3].ToString());
-                double total2 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 1][3].ToString());
-                double total3 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 2][3].ToString());
-                double total4 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 3][3].ToString());
-                double toralAll1 = total1 + total2 + total3 + total4;
-
-                total1 = double.Parse(processing.ReportFile.Rows[lastRowIndex][4].ToString());
-                total2 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 1][4].ToString());
-                total3 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 2][4].ToString());
-                total4 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 3][4].ToString());
-                double toralAll2 = total1 + total2 + total3 + total4;
-
-                total1 = double.Parse(processing.ReportFile.Rows[lastRowIndex][5].ToString());
-                total2 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 1][5].ToString());
-                total3 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 2][5].ToString());
-                total4 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 3][5].ToString());
-                double toralAll3 = total1 + total2 + total3 + total4;
-
-                total1 = double.Parse(processing.ReportFile.Rows[lastRowIndex][5].ToString());
-                total2 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 1][5].ToString());
-                total3 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 2][5].ToString());
-                total4 = double.Parse(processing.ReportFile.Rows[lastRowIndex - 3][5].ToString());
-                double toralAll4 = total1 + total2 + total3 + total4;
+                double totalSumm1 = GetSummFromReport(processing.ReportFile.Rows, lastRowIndex, 3);
+                double totalSumm2 = GetSummFromReport(processing.ReportFile.Rows, lastRowIndex, 4);
+                double totalSumm3 = GetSummFromReport(processing.ReportFile.Rows, lastRowIndex, 5);
+                double totalSumm4 = GetSummFromReport(processing.ReportFile.Rows, lastRowIndex, 6);
 
                 workbook.Worksheet(1).Row(lastRowIndex + 6).InsertRowsBelow(1);
 
-                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(4).SetValue(toralAll1);
-                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(5).SetValue(toralAll2);
-                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(6).SetValue(toralAll3);
-                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(7).SetValue(toralAll4);
+                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(4).SetValue(totalSumm1);
+                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(5).SetValue(totalSumm2);
+                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(6).SetValue(totalSumm3);
+                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(7).SetValue(totalSumm4);
 
                 workbook.Worksheet(1).Row(lastRowIndex + 7).Cells(1, 7).Style.Border.TopBorder = XLBorderStyleValues.Double;
                 workbook.Worksheet(1).CollapseRows();
 
                 string currentDate = DateTime.Now.ToString("MMMM yyyy", new CultureInfo("en-US"));
-                workbook.SaveAs(currentDirectory + "\\Short wo_Capitalization report for " + currentDate + ".xlsx");
+                workbook.SaveAs(saveFilePath + "\\Short wo_Capitalization report for " + currentDate + ".xlsx");
                 changeProgress(50);
             }
+        }
+        private double GetSummFromReport(DataRowCollection rows, int lastRowIndex, int i)
+        {
+            double total1 = double.Parse(rows[lastRowIndex][i].ToString());
+            double total2 = double.Parse(rows[lastRowIndex - 1][i].ToString());
+            double total3 = double.Parse(rows[lastRowIndex - 2][i].ToString());
+            double total4 = double.Parse(rows[lastRowIndex - 3][i].ToString());
+            return total1 + total2 + total3 + total4;
         }
         public void WriteMasterFile()
         {
@@ -177,6 +172,7 @@ namespace Capitalization.Classes
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add(processing.MasterFileTable);
+                message.MessageTriger("Запись файла Master file _ Capitalization report...");
                 changeProgress(20);
                 worksheet.Table(0).Theme = XLTableTheme.None;
                 workbook.Worksheet(1).Row(processing.MasterFileTable.Rows.Count - 3).InsertRowsAbove(4);
@@ -267,24 +263,13 @@ namespace Capitalization.Classes
                 workbook.Worksheet(1).Rows(currentPosition, currentPosition + counter - 2).Group(2);
                 int lastRowIndex = processing.MasterFileTable.Rows.Count - 2;
 
-                double totalTime1 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex][8].ToString());
-                double totalTime2 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex - 1][8].ToString());
-                double totalTime3 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex - 2][8].ToString());
-                double totalTime4 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex - 3][8].ToString());
-
-                double totalTime = totalTime1 + totalTime2 + totalTime3 + totalTime4;
-
-                double totalCost1 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex][9].ToString());
-                double totalCost2 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex - 1][9].ToString());
-                double totalCost3 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex - 2][9].ToString());
-                double totalCost4 = double.Parse(processing.MasterFileTable.Rows[lastRowIndex - 3][9].ToString());
-
-                double totalCost = totalCost1 + totalCost2 + totalCost3 + totalCost4;
+                double totalTimeSumm = GetSummFromReport(processing.MasterFileTable.Rows, lastRowIndex, 8);
+                double totalCostSumm = GetSummFromReport(processing.MasterFileTable.Rows, lastRowIndex, 9);
 
                 workbook.Worksheet(1).Row(lastRowIndex + 6).InsertRowsBelow(1);
 
-                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(9).SetValue(totalTime);
-                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(10).SetValue(totalCost);
+                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(9).SetValue(totalTimeSumm);
+                workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(10).SetValue(totalCostSumm);
                 workbook.Worksheet(1).Row(lastRowIndex + 7).Cell(1).SetValue("Total Planfix");
                 workbook.Worksheet(1).Row(lastRowIndex + 8).Cell(1).SetValue("Total Salary");
                 workbook.Worksheet(1).Row(lastRowIndex + 7).Cells(1, 14).Style.Border.TopBorder = XLBorderStyleValues.Double;
@@ -298,13 +283,14 @@ namespace Capitalization.Classes
                 workbook.Worksheet(2).Row(1).Cells(1, 2).Style.Font.Bold = true;
 
                 string currentDate = DateTime.Now.ToString("MMMM yyyy", new CultureInfo("en-US"));
-                workbook.SaveAs(currentDirectory + "\\Master file _ Capitalization report for " + currentDate + ".xlsx");
+                workbook.SaveAs(saveFilePath + "\\Master file _ Capitalization report for " + currentDate + ".xlsx");
                 changeProgress(30);
             }
         }
         public void AddedSummDataInOriginalFile(string filePath)
         {
             changeProgress(80);
+            message.MessageTriger("Добавление сумм в оригинальный файл...");
             using (var workbook = new XLWorkbook(filePath))
             {
                 var worksheet = workbook.Worksheet(1);

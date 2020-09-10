@@ -1,4 +1,5 @@
-﻿using ClosedXML.Excel;
+﻿using Capitalization.Adittional_Classes;
+using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -13,9 +14,11 @@ namespace Capitalization.Classes
     class Processing
     {
         FileReader fileReader;
-        public Processing(FileReader fileReader)
+        private ConsoleMessage message;
+        public Processing(FileReader fileReader, ConsoleMessage message)
         {
             this.fileReader = fileReader;
+            this.message = message;
         }
 
         private DataTable masterFileTable;
@@ -67,6 +70,7 @@ namespace Capitalization.Classes
 
         private void GenerateCostFile()
         {
+            message.MessageTriger("Создания таблицы для файла Cost by Project Planfix (work)...");
             string[] allColumns = { "Project", "Capex (D-cost) ($)", "Opex (M-cost) ($)", "(In_Ratio-cost) ($)", "Total cost ($)", "Brand/pCat/Department" };
             costFile = new DataTable();
             foreach (var column in allColumns)
@@ -114,6 +118,7 @@ namespace Capitalization.Classes
         }
         private void GenerateReportFile()
         {
+            message.MessageTriger("Создание таблицы для файла Short wo_Capitalization report...");
             string[] columnsToKeep = { "Module", "Brand/pCat/Department", "Project", "D Hours", "M Hours", "In Ratio Hours", "Total time (h)" };
 
             reportFile = new DataTable();
@@ -162,11 +167,31 @@ namespace Capitalization.Classes
         }
         private void GenerateMasterFileSecondSheet()
         {
-            masterFileSecondSheet = fileReader.CapitFileSecondSheet;
+            message.MessageTriger("Создание таблицы для второго листа файла Master file _ Capitalization report");
+            masterFileSecondSheet = new DataTable();
+            masterFileSecondSheet.Columns.Add("Persons");
+            masterFileSecondSheet.Columns.Add("Rate");
+            masterFileSecondSheet.Columns[0].DataType = typeof(string);
+            masterFileSecondSheet.Columns[1].DataType = typeof(double);
+
+            HashSet<string> persons = new HashSet<string>();
+            foreach (var row in fileReader.CapitList)
+                if (row[6] != "")
+                    persons.Add(row[6]);
+
+            foreach (var person in persons)
+            {
+                DataRow row = masterFileSecondSheet.NewRow();
+                row[0] = person;
+                row[1] = 5.00;
+                masterFileSecondSheet.Rows.Add(row);
+            }
+
             masterFileSecondSheet.TableName = "Rate_Planfix";
         }
         private void GenerateMasterFile()
         {
+            message.MessageTriger("Создание таблицы для файла Master file _ Capitalization report...");
             string[] columnsToKeep = { "Module", "Brand/pCat/Department", "Project", "Function", "Person", "Rate aver. ($/h)",
             "Type of Contractor", "Work index", "Time (h)", "Total Cost", "Add new SKU", "Link to task",
             "Date of actual work", "Release date" };
